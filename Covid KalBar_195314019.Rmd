@@ -1,0 +1,408 @@
+---
+title: "Data Visualisasi Covid Kalimantan Barat"
+author: "yulius arian"
+date: "16/3/2022"
+output: html_document
+---
+
+
+### KASUS
+Pandemi covid-19 masih belum berakhir, pada kesempatan ini akan dicoba untuk menganalisis data covid-19 yang ada di Indonesia.
+
+Pemerintah telah mengumpulkan dan menyediakan data perkembangan kasus COVID-19 kepada publik. Data kasus covid-19 tersebutpun dilengkapi dengan gambaran secara visual agar masyarakat dapat mudah memahaminya
+
+Tinjauan statistik dan visualisasi data akan dicoba untuk dipaparkan. Pada penjelasan kasus ini akan diperlihatkan data kasus covid-19 di provinsi Kalimantan Barat.
+
+### Library
+
+```{r}
+if(!require(httr)) install.packages("httr")
+```
+```{r}
+if(!require(dplyr)) install.packages("dplyr")
+```
+
+```{r}
+if(!require(hrbrthemes)) install.packages("hrbrthemes")
+```
+```{r}
+if(!require(ggplot2)) install.packages("ggplot2")
+```
+```{r}
+if(!require(lubridate)) install.packages("lubridate")
+```
+```{r}
+if(!require(tidyr)) install.packages("tidyr")
+```
+
+```{r}
+library(httr)
+library(dplyr)
+library(hrbrthemes)
+library(ggplot2)
+library(lubridate)
+library(tidyr)
+```
+### Mengakses API
+Data yang akan digunakan adalah data yang tersedia di **covid19.go.id**. Data akan diambil secara langsung dengan menggunakan Application Programming Interface (API). Application programming interface (API) adalah kode yang memungkinkan dua program perangkat lunak untuk saling berkomunikasi.
+
+Mengakses API covid19.go.id tersedia di data.covid19.go.id/public/api/update.json.
+
+Mengakses API dilakukan dengan mengaktifkan paket ***httr* dan menggunakan fungsi GET()**.
+
+Dengan menjalankan fungsi GET() berarti kita membuat permintaan kepada server penyedia API. Permintaan akan diproses dan dijawab sebagai respon.
+
+```{r}
+resp <- GET('https://data.covid19.go.id/public/api/update.json')
+```
+### Status Code
+Status kode dari permintaan akses terhadap API Status kode 200 mengartikan permintaan sukses di akses
+
+```{r}
+status_code(resp)
+```
+### Headers API
+Ketika status kode sukses terpenuhi, sekarang jalankan fungsi header() pada respon untuk mengetahui metadata apa saja yang tersimpan.
+```{r}
+headers(resp)
+```
+### Mengekstrak Isi Respon
+Mengekstrak konten, bisa menggunakan fungsi content dengan menambahkan argumen **as = “parsed”** dan **simplifyVector = TRUE **. Akan dilihat juga ada berapa komponen dan komponen apa saja yang terdapat di dalam berkas.
+
+```{r}
+cov_id_raw <- content(resp, as = "parsed",simplifyVector = TRUE)
+length(cov_id_raw)
+```
+
+```{r}
+names(cov_id_raw)
+```
+```{r}
+## exktrak data ke dalam variabel baru
+cov_id_update <- cov_id_raw$update
+```
+### Analisis Data
+Fokus pada analisis adalah pada cov_id_update untuk mengetahui :
+1. Kapan pembaharuan data penambahan kasus?
+2. Berapa jumlah penambahan kasus sembuh?
+3. Berapa jumlah penambahan kasus meninggal?
+4. Berapa jumlah penambahan kasus positif ?
+5. Berapa jumlah total kasus positif hingga saat ini?
+6. Berapa jumlah total kasus meninggal hingga saat ini?
+Sebelum itu, lihat dahulu apa saja nama yang ada didalam objek dengan fungsi lappy
+
+```{r}
+lapply(cov_id_update,names)
+```
+### 1. Kapan pembaharuan data penambahan kasus?
+```{r}
+cov_id_update$penambahan$tanggal
+```
+
+### 2. Berapa jumlah penambahan kasus sembuh?
+```{r}
+cov_id_update$penambahan$jumlah_sembuh
+```
+
+### 3. Berapa jumlah penambahan kasus meninggal?
+```{r}
+cov_id_update$penambahan$jumlah_meninggal
+```
+### 4. Berapa jumlah penambahan kasus positif ?
+```{r}
+cov_id_update$penambahan$jumlah_positif
+```
+### 5. Berapa jumlah total kasus positif hingga saat ini?
+```{r}
+cov_id_update$total$jumlah_positif
+```
+### 6. Berapa jumlah total kasus meninggal hingga saat ini?
+```{r}
+cov_id_update$total$jumlah_meninggal
+```
+
+### ANALISIS KASUS PROVINSI : KALIMANTAN BARAT
+## Persiapan data
+```{r}
+resp_kalbar <- GET('https://data.covid19.go.id/public/api/prov_detail_KALIMANTAN_BARAT.json')
+
+status_code(resp_kalbar)
+```
+
+```{r}
+cov_kalbar_raw <- content(resp_kalbar, as = "parsed", simplifyVector = TRUE)
+names(cov_kalbar_raw)
+```
+### Analisis Data
+Jawab Pertanyaan berikut:
+
+1. Berapa total kasus COVID-19 di Kalimantan Barat
+2. Berapa presentase tingkat kematian akibat COVID-19 di Kalimantan Barat
+3. Berapa presentase tingkat kesembuahan dari COVID-19 di Kalimantan Barat
+
+### 1. Berapa total kasus COVID-19 di Kalimantan Barat
+```{r}
+cov_kalbar_raw$kasus_total
+```
+### 2. Berapa presentase tingkat kematian akibat COVID-19 di Kalimantan Barat
+```{r}
+cov_kalbar_raw$meninggal_persen
+```
+### 3. Berapa presentase tingkat kesembuahan dari COVID-19 di Kalimantan Barat
+```{r}
+cov_kalbar_raw$sembuh_persen
+```
+### Memperoleh informasi summary yang lebih lengkap
+Informasi umum mengenai COVID-19 di Kalimantan Barat telah di dapatkan. Namun informasi akan lebih lengkap jika memiliki data perkembangan COVID-19 dari waktu ke waktu.
+
+Informasi tersebut juga disediakan oleh covid19.go.id melalui permintaan API yang telah Anda buat sebelumnya. Data akan di ekstrak dan dilihat struktur datanya. Akan ditampilkan pula data teratasnya.
+
+```{r}
+cov_kalbar <- cov_kalbar_raw$list_perkembangan
+str(cov_kalbar)
+```
+
+```{r}
+head(cov_kalbar)
+```
+
+### Preprocessing Data
+Ada beberapa tahapan yang perlu dilakukan untuk menjinakan data cov_kalbar, yaitu:
+
+1. Menghapus kolom DIRAWAT_OR_ISOLASI
+2. Menghapus semua kolom yang berisi nilai kumulatif
+3. Mengganti nama kolom KASUS menjadi kasus_baru
+4. Merubah format penulisan kolom berikut menjadi huruf kecil
+ - kolom MENINGGAL
+ - kolom SEMBUH
+5. Memperbaiki data pada kolom tanggal
+
+Dengan mengaktifkan paket **dplyr** digunakan untuk melakukan pengolahan data.
+
+```{r}
+library(dplyr)
+new_cov_kalbar <-
+  cov_kalbar %>% 
+  select(-contains("DIRAWAT_OR_ISOLASI")) %>% 
+  select(-starts_with("AKUMULASI")) %>% 
+  rename(
+    kasus_baru = KASUS,
+    meninggal = MENINGGAL,
+    sembuh = SEMBUH
+    ) %>% 
+  mutate(
+    tanggal = as.POSIXct(tanggal / 1000, origin = "1970-01-01"),
+    tanggal = as.Date(tanggal)
+  )
+
+#Dilihat struktur data dari new_cov_kalbar
+str(new_cov_kalbar)
+```
+### Data dalam Gambar
+Data COVID-19 akan divisualisasikan dengan grafik menggunakan paket **ggplot2** dan **hrbrthemes** untuk melihat dinamika kasus Covid-19 di Kalimantan Barat dari waktu ke waktu.
+
+### 1. KASUS HARIAN POSITIF
+```{r}
+library(ggplot2)
+library(hrbrthemes)
+#library(extrafont) 
+#font_import()
+#loadfonts(device = "win")
+
+ggplot(new_cov_kalbar, aes(tanggal, kasus_baru)) +
+  geom_col(fill = "salmon") +
+  labs(
+    x = NULL,
+    y = "Jumlah Kasus",
+    title = "Kasus Harian Positif COVID-19 di Kalimantan Barat",
+    caption = "Sumber data: covid.19.go.id"
+  ) +
+  theme_ipsum(
+    base_size = 13,
+    plot_title_size = 21,
+    grid = "Y",
+    ticks = TRUE
+    ) +
+  theme(plot.title.position = "plot")
+```
+
+  
+### 2. KASUS HARIAN SEMBUH
+
+```{r}
+ggplot(new_cov_kalbar, aes(tanggal, sembuh)) +
+  geom_col(fill = "olivedrab2") +
+  labs(
+    x = NULL,
+    y = "Jumlah kasus",
+    title = "Kasus Harian Sembuh Dari COVID-19 di Kalimantan Barat",
+    caption = "Sumber data: covid.19.go.id"
+  ) +
+  theme_ipsum(
+    base_size = 13, 
+    plot_title_size = 21,
+    grid = "Y",
+    ticks = TRUE
+  ) +
+  theme(plot.title.position = "plot")
+```
+
+
+### 3. KASUS HARIAN MENINGGAL
+
+```{r}
+ggplot(new_cov_kalbar, aes(tanggal, meninggal)) +
+  geom_col(fill = "darkslategray4") +
+  labs(
+    x = NULL,
+    y = "Jumlah kasus",
+    title = "Kasus Harian Meninggal Akibat COVID-19 di Kalimantan Barat",
+    caption = "Sumber data: covid.19.go.id"
+  ) +
+  theme_ipsum(
+    base_size = 13, 
+    plot_title_size = 21,
+    grid = "Y",
+    ticks = TRUE
+  ) +
+  theme(plot.title.position = "plot")
+```
+
+
+### 4. PENAMBAHAN KASUS MINGGUAN
+Setelah mengamati grafik perkembangan kasus harian. Akan kita amati pula bagaimana perkembangan kasus dalam rentang waktu mingguan.
+
+Paket **lubridate** dapat memudahkan bekerja dengan data tanggal. Adapun yang akan digunakan untuk mengekstrak informasi migguan dalam satu tahun adalah fungsi week().
+
+```{r}
+library(lubridate)
+
+cov_kalbar_pekanan <- new_cov_kalbar %>% 
+  count(
+    tahun = year(tanggal),
+    pekan_ke = week(tanggal),
+    wt = kasus_baru,
+    name = "jumlah"
+  )
+
+#Melihat struktur datanya
+glimpse(cov_kalbar_pekanan)
+```
+### 5. Apakah pekan ini lebih baik dari pekan kemarin ?
+
+Untuk menjawab pertanyaan tersebut, perlu dilakukan kalkulasi sederhana dengan tahapan berikut:
+
+1. Membuat kolom baru yang berisi jumlah kasus baru dalam satu pekan sebelumnya. Kolom ini diberi nama “jumlah_pekanlalu”.
+2. Mengganti nilai NA pada kolom “jumlah_pekanlalu” dengan nilai 0
+3. Melakukan komparasi antara kolom “jumlah” dengan kolom “jumlah_pekanlalu”. Hasil komparasi ini disimpan dalam kolom baru dengan nama “lebih_baik”, isinya adalah TRUE apabila jumlah kasus baru pekan ini lebih rendah dibandingkan jumlah kasus pekan lalu.
+
+Gunakan fungsi lag() dari dplyr untuk membuat kolom jumlah_pekanbaru fungsi dituliskan sebagai dplyr::lag() untuk menghindari konflik dengan fungsi lag() dari paket stats. Dan inpeksi kembali dengan fungsi glimpse().
+
+```{r}
+cov_kalbar_pekanan <-
+  cov_kalbar_pekanan %>% 
+  mutate(
+    jumlah_pekanlalu = dplyr::lag(jumlah, 1),
+    jumlah_pekanlalu = ifelse(is.na(jumlah_pekanlalu), 0, jumlah_pekanlalu),
+    lebih_baik = jumlah < jumlah_pekanlalu
+  )
+glimpse(cov_kalbar_pekanan)
+```
+untuk pertanyaan Apakah pekan ini lebih baik dari pekan kemarin? digunakan **bar chart** untuk menjawab pertanyaan tersebut.
+
+```{r}
+ggplot(cov_kalbar_pekanan, aes(pekan_ke, jumlah, fill = lebih_baik)) +
+  geom_col(show.legend = FALSE) +
+  scale_x_continuous(breaks =1:60,expand = c(0,0)) +
+  scale_fill_manual(values = c("TRUE" = "seagreen3", "FALSE" = "salmon")) +
+  labs(
+    x = NULL,
+    y = "Jumlah kasus",
+    title = "Kasus Positif COVID-19 di Kalimantan Barat Mingguan",
+    subtitle = "Kolom hijau menunjukan penambahan kasus baru lebih sedikit dibandingkan minggu sebelumnya",
+    caption = "Sumber data: covid.19.go.id"
+  ) +
+  theme_ipsum(
+    base_size = 12,
+    plot_title_size = 21,
+    grid = "Y",
+    ticks = TRUE
+  ) +
+  theme(plot.title.position = "plot")
+```
+
+### 6. Hingga saat ini, berapa banyak kasus yang masih aktif ?
+Aktif dalam artian sedang dalam perawatan atau isolasi.Jumlah kasus yang masih aktif dapat dihitung dengan mengurangi jumlah akumulasi kasus positif dengan jumlah akumulasi kasus yang sembuh, dan menguranginya juga dengan jumlah akumulasi kasus meninggal.
+
+Nilai akumulasi dihitung dengan fungsi **cumsum()**.
+
+```{r}
+cov_kalbar_akumulasi <- 
+  new_cov_kalbar %>% 
+  transmute(
+    tanggal,
+    akumulasi_aktif = cumsum(kasus_baru) - cumsum(sembuh) - cumsum(meninggal),
+    akumulasi_sembuh = cumsum(sembuh),
+    akumulasi_meninggal = cumsum(meninggal)
+  )
+
+tail(cov_kalbar_akumulasi)
+```
+```{r}
+ggplot(data = cov_kalbar_akumulasi, aes(x = tanggal, y = akumulasi_aktif)) +
+  geom_line()
+```
+
+### TRANFORMASI DATA
+Akan dilakukan pivot pada data cov_kalbar_akumulasi dan digunakan fungsi gather() di paket **tidyr** untuk mentransformasi data. Data akan dirubah dari yang semula berformat wide menjadi format long.
+
+Transformasi ini bermanfaat saat kita melakukan grafik komparasi antara kasus aktif, sembuh, dan meninggal.
+
+```{r}
+cov_kalbar_akumulasi_pivot <- 
+  cov_kalbar_akumulasi %>% 
+  gather(
+    key = "kategori",
+    value = "jumlah",
+    -tanggal
+  ) %>% 
+  mutate(
+    kategori = sub(pattern = "akumulasi_", replacement = "", kategori)
+  )
+glimpse(cov_kalbar_akumulasi_pivot)
+```
+
+### Membuat Grafik Komparasi Kasus Aktif, Sembuh, dan Meninggal
+membuat satu layer geom_line() dengan menggunakan colour aesthetic.
+
+```{r}
+ggplot(cov_kalbar_akumulasi_pivot,aes(tanggal,jumlah,colour=(kategori))) +
+  geom_line(size=0.9) +
+  scale_y_continuous(sec.axis = dup_axis(name = NULL)) +
+  scale_colour_manual(
+    values = c(
+      "aktif" = "salmon",
+      "meninggal" = "darkslategray4",
+      "sembuh" = "olivedrab2"
+    ),
+    labels = c("Aktif","Meninggal","Sembuh")
+  ) +
+  labs(
+    x = NULL,
+    y = "Jumlah kasus akumulasi",
+    colour = NULL,
+    title = "Dinamika Kasus COVID-19 di Provinsi Kalimantan Barat",
+    caption = "Sumber data: covid.19.go.id"
+  ) +
+  theme_ipsum(
+    base_size = 13,
+    plot_title_size = 21,
+    grid = "Y",
+    ticks = TRUE
+  ) +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    legend.position = "top"
+  )
+```
+Dari visualisasi grafik di atas  merupakan gambaran terkait Kasus Aktif, Sembuh, dan Meninggal di Provinsi Kalimantan Barat. Upaya pemerintah dalam menangani covid sudah cukup baik dibuktikan dengan tren kesembuhan mengalami kenaikan yang signifikan. Untuk kasus aktif covid juga masih naik turun tapi hanya pada bulan tertentu saja,selebihnya masih landai dan cenderung tidak mengalami lonjakan yang tinggi. Untuk kasus meninggal cukup rendah,namun perlu diperhatikan walau data menunjukan covid bisa dikendalikan, kita harus tetap waspada dan tidak terlenan, serta selalu menerapkan protokol kesehatan ketat dengan menggunakan masker,mencuci tangan, dan mengurangi mobilitas.
